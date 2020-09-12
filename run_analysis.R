@@ -39,3 +39,6 @@ names(merged_subject) <- c("subject")
 merged_data <- cbind(merged_subject, merged_set, merged_label)
 
 final_data <- merged_data %>% group_by(subject, label) %>% summarise_all(mean)
+
+write.table(final_data, "clean-data.txt", row.name=FALSE)
+
