@@ -9,36 +9,33 @@ if (!file.exists(fileDir)) {
   file.remove("dataset.zip")
 }
 
+getDataSet <- function(name, colNames) {
+  testData <- read.table(paste0(fileDir, "/test/", name, "_test.txt"))
+  trainData <-read.table(paste0(fileDir, "/train/", name, "_train.txt"))
+  mergedData <- rbind(trainData, testData)
+  names(mergedData) <- colNames
+  mergedData
+}
+
 features_label <- read.table(paste0(fileDir, "/features.txt"), colClasses = c("NULL", "character"))
 features_label <- unlist(features_label$V2)
 
-test_set <- read.table(paste0(fileDir, "/test/X_test.txt"))
-test_label <- read.table(paste0(fileDir, "/test/y_test.txt"))
-test_subject <- read.table(paste0(fileDir,"/test/subject_test.txt"))
+dataset <- getDataSet("X", colNames = features_label)
 
-train_set <- read.table(paste0(fileDir, "/train/X_train.txt"))
-train_label <- read.table(paste0(fileDir, "/train/y_train.txt"))
-train_subject <- read.table(paste0(fileDir,"/train/subject_train.txt"))
+dataset <- dataset %>% select(contains("std()"), contains("mean()"))
+names(dataset) <- gsub("^t", "Time", names(dataset))
+names(dataset) <- gsub("^f", "FFT", names(dataset))
+names(dataset) <- gsub("std", "Std", names(dataset))
+names(dataset) <- gsub("mean", "Mean", names(dataset))
+names(dataset) <- gsub("\\(\\)", "", names(dataset))
+names(dataset) <- gsub("-", "", names(dataset))
 
-merged_set <- rbind(train_set, test_set)
-merged_label <- rbind(train_label, test_label)
-merged_subject <- rbind(train_subject, test_subject)
+datalabel <- getDataSet("y", colNames = c("label"))
+datasubject <- getDataSet("subject", colNames = c("subject"))
 
-names(merged_set) <- features_label
-merged_set <- merged_set %>% select(contains("std()"), contains("mean()"))
-names(merged_set) <- gsub("^t", "Time", names(merged_set))
-names(merged_set) <- gsub("^f", "FFT", names(merged_set))
-names(merged_set) <- gsub("std", "Std", names(merged_set))
-names(merged_set) <- gsub("mean", "Mean", names(merged_set))
-names(merged_set) <- gsub("\\(\\)", "", names(merged_set))
-names(merged_set) <- gsub("-", "", names(merged_set))
+dataset <- cbind(datasubject, dataset, datalabel)
 
-names(merged_label) <- c("label")
-names(merged_subject) <- c("subject")
+cleanData <- dataset %>% group_by(subject, label) %>% summarise_all(mean)
 
-merged_data <- cbind(merged_subject, merged_set, merged_label)
-
-final_data <- merged_data %>% group_by(subject, label) %>% summarise_all(mean)
-
-write.table(final_data, "clean-data.txt", row.name=FALSE)
+write.table(cleanData, "clean-data.txt", row.name=FALSE)
 
