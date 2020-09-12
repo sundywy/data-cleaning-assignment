@@ -23,12 +23,17 @@ features_label <- unlist(features_label$V2)
 dataset <- getDataSet("X", colNames = features_label)
 
 dataset <- dataset %>% select(contains("std()"), contains("mean()"))
-names(dataset) <- gsub("^t", "Time", names(dataset))
-names(dataset) <- gsub("^f", "FFT", names(dataset))
-names(dataset) <- gsub("std", "Std", names(dataset))
-names(dataset) <- gsub("mean", "Mean", names(dataset))
-names(dataset) <- gsub("\\(\\)", "", names(dataset))
-names(dataset) <- gsub("-", "", names(dataset))
+
+rename <- function(name) {
+  name <- gsub("^t", "Time", name)
+  name <- gsub("^f", "FFT", name)
+  name <- gsub("\\(\\)", "", name)
+  ns <- strsplit(name, split = "-")
+  
+  paste0(ns[[1]][2], ns[[1]][1], ns[[1]][3])
+}
+
+names(dataset) <- unlist(lapply(names(dataset), rename))
 
 datalabel <- getDataSet("y", colNames = c("label"))
 datasubject <- getDataSet("subject", colNames = c("subject"))
